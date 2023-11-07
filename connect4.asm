@@ -17,13 +17,13 @@ L8: .space 13
 
 .text
 la s0, Board
-lw s1, (s0)
-lw s2, 4(s0)
-lw s3, 8(s0)
+lw s1, 24(s0)
+lw s2, 20(s0)
+lw s3, 16(s0)
 lw s4, 12(s0)
-lw s5, 16(s0)
-lw s6, 20(s0)
-lw s7, 24(s0)
+lw s5, 8(s0)
+lw s6, 4(s0)
+lw s7, (s0)
 
 main:
     li t3, 'd'
@@ -66,8 +66,8 @@ gameAction:
 
 slotFound: 
     # Determine the symbol ('X' or 'O') based on the value of t6 (player's turn)
-    li t4, 'X'
-    li t5, 'O'
+    li t4, 'O'
+    li t5, 'X'
     li t2, 2  # Store the value 2 in t2
 
     # Check if t6 is even or odd
@@ -86,9 +86,6 @@ updateSlot:
     # Update the 3rd character of the current row with the chosen symbol (t4)
     sb t4, 2(t0)
     addi t6, t6, 1  # Increment the player's turn counter
-    li a0, 999
-    li a7, 1
-    ecall
     j main
 
 gameStatus:
