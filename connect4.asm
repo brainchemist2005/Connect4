@@ -4,26 +4,26 @@
 .eqv Exit, 10
 
 .data
-Board: .word L1 L2 L3 L4 L5 L6 L7
+Board: .dword L1 L2 L3 L4 L5 L6 L7
 
-L1: .string ":.......:"
-L2: .string ":.......:"
-L3: .string ":.......:"
-L4: .string ":.......:"
-L5: .string ":.......:"
-L6: .string ":.......:"
-L7: .string ":.......:"
+L1: .dword ":.......:"
+L2: .dword ":.......:"
+L3: .dword ":.......:"
+L4: .dword ":.......:"
+L5: .dword ":.......:"
+L6: .dword ":.......:"
+L7: .dword ":.......:"
 L8: .space 13
 
 .text
 la s0, Board
-lw s1, 24(s0)
-lw s2, 20(s0)
-lw s3, 16(s0)
-lw s4, 12(s0)
-lw s5, 8(s0)
-lw s6, 4(s0)
-lw s7, (s0)
+ld s1, 24(s0)
+ld s2, 20(s0)
+ld s3, 16(s0)
+ld s4, 12(s0)
+ld s5, 8(s0)
+ld s6, 4(s0)
+ld s7, 0(s0)
 
 main:
     li t3, 'd'
@@ -32,6 +32,8 @@ main:
     li a7, ReadChar
     ecall
     
+    la t0, Board
+    li t5, 1
     beq a0, t3, gameStatus
     li t3, 'q'
     beq a0, t3, Done
@@ -47,7 +49,7 @@ gameAction:
     li t3, '.'
 
     # Set up a pointer to the first row
-    add t0, s0, x0
+    la t0, Board
 
     # Loop through the rows
     rowLoop:
@@ -58,7 +60,7 @@ gameAction:
         beq t1, t3, slotFound  # If the 3rd slot contains '.', jump to slotFound
 
         # Move to the next row
-        lw t0, 4(t0)
+        addi t0,t0,4
         j rowLoop
 
     done:
@@ -84,52 +86,32 @@ slotFound:
 
 updateSlot:
     # Update the 3rd character of the current row with the chosen symbol (t4)
+    li a0, 0
+    add a0, a0,t4
+    li a7, PrintChar
+    ecall
     sb t4, 2(t0)
     addi t6, t6, 1  # Increment the player's turn counter
     j main
 
+
 gameStatus:
-    li t0, '\n'
+    li t4, 7
+    li t3, '\n'
     li a7, PrintChar
-    mv a0, t0
+    mv a0, t3
     ecall
     li a7, PrintString
-    mv a0, s1
+    lw a0 ,24(t0)
     ecall
+    addi t0,t0,-4
+    addi t5 ,t5 ,1
+   blt t5 , t4, gameStatus
+   li t3, '\n'
     li a7, PrintChar
-    mv a0, t0
+    mv a0, t3
     ecall
-    li a7, PrintString
-    mv a0, s2
-    ecall
-    li a7, PrintChar
-    mv a0, t0
-    ecall
-    li a7, PrintString
-    mv a0, s3
-    ecall
-    li a7, PrintChar
-    mv a0, t0
-    ecall
-    li a7, PrintString
-    mv a0, s4
-    ecall
-    li a7, PrintChar
-    mv a0, t0
-    ecall
-    li a7, PrintString
-    mv a0, s5
-    ecall
-    li a7, PrintChar
-    mv a0, t0
-    ecall
-    li a7, PrintString
-    mv a0, s6
-    ecall
-    li a7, PrintChar
-    mv a0, t0
-    ecall
-    j main
+   j main
 
 Done:
     li a7, Exit
