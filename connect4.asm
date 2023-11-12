@@ -4,7 +4,7 @@
 .eqv Exit, 10
 
 .data
-Board: .word L1 L2 L3 L4 L5 L6
+Board: .word L1 L2 L3 L4 L5 L6 L7
 
 L1: .string ":.......:"
 L2: .string ":.......:"
@@ -12,10 +12,13 @@ L3: .string ":.......:"
 L4: .string ":.......:"
 L5: .string ":.......:"
 L6: .string ":.......:"
+L7: .string ":.......:"
 
 L8: .space 13
 
 errorMsg: .string "Erreur d'entrée.\n"
+Xloses : .string "Le joueur X perd."
+Oloses : .string "Le joueur O perd."
 
 .text
 la s0, Board       # Load base address of Board into s0
@@ -26,7 +29,7 @@ lw s3, 8(s0)       # Load the address of the third row into s3
 lw s4, 12(s0)      # Load the address of the fourth row into s4
 lw s5, 16(s0)      # Load the address of the fifth row into s5
 lw s6, 20(s0)      # Load the address of the sixth row into s6
-
+lw s7 , 24(s0)
 
 main:
     li t5, 1
@@ -72,9 +75,10 @@ gameAction:
 la t0, Board
 li t5, 0        # Initialize row counter
 
+li s8, 0
 # Loop through the rows
 rowLoop:
-    
+    addi s8 , s8 ,1
     lw t4, 0(t0)  # Load the address of the current row into t4
     add t4, t4, a0  # Add the column offset to the row address
     lb t1, 0(t4)   # Load the byte at the calculated address into t1
@@ -85,8 +89,6 @@ rowLoop:
     li t4, 7        # Total number of rows
     bge t5, t4, done  # If we've checked all rows, exit the loop
     addi t0, t0, 4  # Otherwise, move to the next row
-    li a7,1
-    ecall
     j rowLoop
 
     done:
@@ -116,33 +118,55 @@ updateSlot:
     # a0 contains the column offset.
     
       # Add the column offset to the base address of the row to get the exact slot address.
-    
+    li x1, 7
     lw t1, 0(t0)
     add t1, t1, a0  # Add the offset in a0 to the base address in s1, store result in t0
     sb t4, 0(t1)       # Store the 'X' or 'O' at the address in t0.
 
     addi t6, t6, 1   # Increment the player's turn counter.
+    beq s8 , x1,overflow
     j main
 
-
-
+overflow:
+	li t5, 1
+	la t0, Board
+	li x2 , 2
+	rem x2,t6 ,x2
+	li x0, 0
+	j gameStatus
+	
+Xlost:
+	beq x2, x0, Olost
+	la a0 , Xloses
+	li a7 ,PrintString
+	ecall
+	j Done
+	
+Olost:
+	la a0 , Oloses
+	li a7 ,PrintString
+	ecall
+	j Done
+	
 gameStatus:
-    li t4, 7
+    li x1, 7
+    li t4, 8
     li t3, '\n'
     li a7, PrintChar
     mv a0, t3
     ecall
     li a7, PrintString
-    lw a0 ,20(t0)
+    lw a0 ,24(t0)
     ecall
     addi t0,t0,-4
     addi t5 ,t5 ,1
-   blt t5 , t4, gameStatus
-   li t3, '\n'
+    blt t5 , t4, gameStatus
+    li t3, '\n'
     li a7, PrintChar
     mv a0, t3
     ecall
-   j main
+    beq s8 , x1, Xlost
+    j main
 
 Done:
     li a7, Exit
