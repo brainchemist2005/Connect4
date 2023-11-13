@@ -19,6 +19,8 @@ L8: .space 13
 errorMsg: .string "Erreur d'entrée.\n"
 Xloses : .string "Le joueur X perd."
 Oloses : .string "Le joueur O perd."
+Xturn : .string "Au joueur X de jouer."
+Oturn : .string "Au joueur O de jouer."
 
 .text
 la s0, Board       # Load base address of Board into s0
@@ -166,6 +168,17 @@ gameStatus:
     mv a0, t3
     ecall
     beq s8 , x1, Xlost
+    li x1 , 2
+    rem x2, t6,x1
+    beqz x2, XTurn
+    la a0 , Oturn
+    li a7, PrintString
+    ecall
+    j main
+    XTurn:
+    la a0 , Xturn
+    li a7, PrintString
+    ecall
     j main
 
 Done:
