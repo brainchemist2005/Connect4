@@ -21,8 +21,11 @@ Xloses : .string "Le joueur X perd."
 Oloses : .string "Le joueur O perd."
 Xturn : .string "Au joueur X de jouer."
 Oturn : .string "Au joueur O de jouer."
+Xwon : .string "Le joueur X gagne."
+Owon : .string "Le joueur O gagne."
 
 .text
+
 la s0, Board       # Load base address of Board into s0
 
 lw s1, 0(s0)       # Load the address of the first row into s1
@@ -59,6 +62,7 @@ main:
     blt a0, t1, inputError  # If input is less than '1', it's an error
     bgt a0, t2, inputError  # If input is greater than '7', it's an error
 
+
     # Valid move input, proceed to gameAction
     j gameAction
 
@@ -78,6 +82,7 @@ la t0, Board
 li t5, 0        # Initialize row counter
 
 li s8, 0
+li s9 ,0
 # Loop through the rows
 rowLoop:
     addi s8 , s8 ,1
@@ -91,10 +96,49 @@ rowLoop:
     li t4, 7        # Total number of rows
     bge t5, t4, done  # If we've checked all rows, exit the loop
     addi t0, t0, 4  # Otherwise, move to the next row
+    addi s9 ,s9 ,1
     j rowLoop
 
     done:
     j main
+    
+checkWin:
+    # Save registers that will be used
+    addi sp , sp , -44
+    # Set t4 to the current player's symbol ('X' or 'O')
+    li t2, 2
+    rem t2, t6, t2
+    beqz t2, playerX
+    li t4, 'O'
+    playerX:
+    li t4, 'X'
+    li t2, 0
+    sw ra, 0(sp)  # Save the return address
+    sw s0, 4(sp)  # Save the board base address
+    sw t4, 8(sp)  # Save the current player's symbol ('X' or 'O')
+    sw t6, 12(sp) # Save the current player's turn counter
+    sw a0, 16(sp) # Save the current column position
+    sw t2, 24(sp) # match  counter
+    sw t2, 28(sp)
+    li t2, 1
+    sw t2, 32(sp)
+    li t2, 7
+    sw t2, 36(sp)
+    li t2, 4
+    sw t2, 40(sp)
+    #jal checkHorizontalWin
+    jal checkVerticalWin
+    #jal checkDiagonalWinLTR
+    #jal checkDiagonalWinRTL
+    
+    lw ra, 0(sp)
+    lw s0, 4(sp)
+    lw t4, 8(sp)
+    lw t6, 12(sp)
+    lw t1, 16(sp)
+    lw t2, 28(sp)
+    
+    beqz t2 , playerWins
 
 slotFound: 
     # Determine the symbol ('X' or 'O') based on the value of t6 (player's turn)
@@ -127,7 +171,65 @@ updateSlot:
 
     addi t6, t6, 1   # Increment the player's turn counter.
     beq s8 , x1,overflow
-    j main
+    
+    j checkWin
+
+# checkVerticalWin Subroutine
+checkVerticalWin:
+    lw s1, 16(sp)  # Initialize column index
+vertical_col_loop:
+    li t5, 0  # Initialize match counter
+    lw t3, 0(sp)
+    
+vertical_row_check:
+    slli t6, s9, 2  # Calculate row offset
+
+    add t3, s0, t6  # Calculate address of the start of the row
+    lw a0, (t3)
+    li a7, PrintString
+    ecall
+   # add t3, t3, s1  # Calculate address of the current cell
+    lw a0, 1(t3)
+    li a7, PrintChar
+    ecall
+    
+    lb x4, 0(t3)    # Load the content of the cell
+    bne t4 , x4, main
+increment_vertical_counter:
+    lw x4, 32(sp)
+    lw x6, 40(sp)
+    addi t5, t5, 1  # Increment match counter
+    beq t5, x6, playerWins  # If there are four in a column, player wins
+    addi s9, s9, -1  # Move to the next cell in the column
+    bge s2 , x4 , vertical_row_check
+    lw ra, 0(sp)
+    lw s0, 4(sp)
+    lw t4, 8(sp)
+    lw t6, 12(sp)
+    lw t1, 16(sp)
+    lw t2, 28(sp)
+    blt s2, x4, main # Check the next cell in the column
+    addi sp ,sp , 44
+    jr ra  # Return to the main checkWin routine
+
+# Player wins
+playerWins:
+    addi sp, sp, 44
+    li x1, 2
+    rem t2 , t6 , x1
+    beqz t2 , winX
+
+winO:
+	la a0, Owon
+	li a7, PrintString
+	ecall
+	j Done
+	
+winX:
+	la a0, Xwon
+	li a7, PrintString
+	ecall
+	j Done	
 
 overflow:
 	li t5, 1
