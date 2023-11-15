@@ -138,7 +138,7 @@ checkWin:
     lw t1, 16(sp)
     lw t2, 28(sp)
     
-    beqz t2 , playerWins
+
 
 slotFound: 
     # Determine the symbol ('X' or 'O') based on the value of t6 (player's turn)
@@ -179,38 +179,39 @@ checkVerticalWin:
     lw s1, 16(sp)  # Initialize column index
 vertical_col_loop:
     li t5, 0  # Initialize match counter
-    lw t3, 0(sp)
-    
+    la t3, Board
+    li x4, 10
 vertical_row_check:
-    slli t6, s9, 2  # Calculate row offset
+    lw x1 , 0(t3)
+    mul t6, s9, x4   # Calculate row offset
+    add x1, x1, t6     # Calculate address of the start of the row
+    add x1, x1, s1     # Add column index to get the address of the current cell
+    lb t1, 0(x1)       # Load the byte at the current cell into a0
+    mv a0, t6
+    li a7, 1
+    ecall 
+    li a0, '$'
+    li a7 , PrintChar
+    ecall
+    bne t4 , t1, main
 
-    add t3, s0, t6  # Calculate address of the start of the row
-    lw a0, (t3)
-    li a7, PrintString
-    ecall
-   # add t3, t3, s1  # Calculate address of the current cell
-    lw a0, 1(t3)
-    li a7, PrintChar
-    ecall
-    
-    lb x4, 0(t3)    # Load the content of the cell
-    bne t4 , x4, main
 increment_vertical_counter:
-    lw x4, 32(sp)
-    lw x6, 40(sp)
-    addi t5, t5, 1  # Increment match counter
+    li x6 , 4
+    addi t5, t5, 1    # Increment match counter
+
     beq t5, x6, playerWins  # If there are four in a column, player wins
-    addi s9, s9, -1  # Move to the next cell in the column
-    bge s2 , x4 , vertical_row_check
-    lw ra, 0(sp)
-    lw s0, 4(sp)
-    lw t4, 8(sp)
-    lw t6, 12(sp)
-    lw t1, 16(sp)
-    lw t2, 28(sp)
-    blt s2, x4, main # Check the next cell in the column
-    addi sp ,sp , 44
-    jr ra  # Return to the main checkWin routine
+
+    # You should check if you've reached the bottom of the column before incrementing s9.
+    addi s9, s9, -1   # Decrement to move to the next cell in the column
+
+    bltz s9, main   # If s9 is less than 0, exit the loop (to avoid going out of bounds)
+
+    j vertical_row_check  # If s2 is greater than or equal to x4, go back to check the next row
+
+    # If the above condition fails, it means you've checked all required rows.
+    # You should restore the stack and registers, then return.
+    addi sp, sp, 44   # Restore the stack pointer
+    jr ra             # Return to the caller
 
 # Player wins
 playerWins:
