@@ -208,7 +208,7 @@ end_vertical_check:
 playerWins:
     li x1, 2
     rem t2 , t6 , x1
-    beqz t2 , winX
+    bnez t2 , winX
 
 winO:
 	la a0, Owon
