@@ -41,6 +41,7 @@ main:
     li a7, ReadChar  # System call to read a character
     ecall            # Execute the system call
 
+    mv s10 , a0
     # Ignore spaces (ASCII 32) and newlines (ASCII 10)
     li t3, 32        # Space character
     beq a0, t3, main # If input is space, read next character
@@ -83,6 +84,7 @@ li t5, 0        # Initialize row counter
 
 li s8, 0
 li s9 ,0
+
 # Loop through the rows
 rowLoop:
     addi s8 , s8 ,1
@@ -104,43 +106,30 @@ rowLoop:
     
 checkWin:
     # Save registers that will be used
-    addi sp , sp , -44
     # Set t4 to the current player's symbol ('X' or 'O')
     li t2, 2
     rem t2, t6, t2
-    beqz t2, playerX
+    bnez t2, playerX
     li t4, 'O'
+    j player0
+    
     playerX:
     li t4, 'X'
+    
+    player0:
     li t2, 0
-    sw ra, 0(sp)  # Save the return address
-    sw s0, 4(sp)  # Save the board base address
-    sw t4, 8(sp)  # Save the current player's symbol ('X' or 'O')
-    sw t6, 12(sp) # Save the current player's turn counter
-    sw a0, 16(sp) # Save the current column position
-    sw t2, 24(sp) # match  counter
-    sw t2, 28(sp)
-    li t2, 1
-    sw t2, 32(sp)
-    li t2, 7
-    sw t2, 36(sp)
-    li t2, 4
-    sw t2, 40(sp)
+    
     #jal checkHorizontalWin
-    jal checkVerticalWin
+    j checkVerticalWin
     #jal checkDiagonalWinLTR
     #jal checkDiagonalWinRTL
-    
-    lw ra, 0(sp)
-    lw s0, 4(sp)
-    lw t4, 8(sp)
-    lw t6, 12(sp)
-    lw t1, 16(sp)
-    lw t2, 28(sp)
-    
+
+    j main
+
 
 
 slotFound: 
+
     # Determine the symbol ('X' or 'O') based on the value of t6 (player's turn)
     li t4, 'X'
     li t5, 'O'
@@ -148,7 +137,7 @@ slotFound:
 
     # Check if t6 is even or odd
     rem t2, t6, t2  # t2 will be 0 if t6 is even, 1 if t6 is odd
-
+    
     # Calculate the symbol to use
     beqz t2, setX  # If t2 is 0 (even), jump to setX
     mv t4, t5      # If t6 is odd, set t4 to 'O'
@@ -171,51 +160,52 @@ updateSlot:
 
     addi t6, t6, 1   # Increment the player's turn counter.
     beq s8 , x1,overflow
-    
+
     j checkWin
 
 # checkVerticalWin Subroutine
 checkVerticalWin:
-    lw s1, 16(sp)  # Initialize column index
+    mv s1, a0  # Initialize column index
 vertical_col_loop:
     li t5, 0  # Initialize match counter
     la t3, Board
     li x4, 10
 vertical_row_check:
     lw x1 , 0(t3)
-    mul t6, s9, x4   # Calculate row offset
-    add x1, x1, t6     # Calculate address of the start of the row
+    mul x5, s9, x4   # Calculate row offset
+    add x1, x1, x5     # Calculate address of the start of the row
     add x1, x1, s1     # Add column index to get the address of the current cell
     lb t1, 0(x1)       # Load the byte at the current cell into a0
-    mv a0, t6
-    li a7, 1
-    ecall 
-    li a0, '$'
-    li a7 , PrintChar
+    mv a0, t4
+    li a7, PrintChar
     ecall
-    bne t4 , t1, main
+    beq t4 , t1, increment_vertical_counter
+    
+    j main 
 
 increment_vertical_counter:
     li x6 , 4
     addi t5, t5, 1    # Increment match counter
+
+    mv a0, t5
+    li a7, 1
+    ecall
 
     beq t5, x6, playerWins  # If there are four in a column, player wins
 
     # You should check if you've reached the bottom of the column before incrementing s9.
     addi s9, s9, -1   # Decrement to move to the next cell in the column
 
-    bltz s9, main   # If s9 is less than 0, exit the loop (to avoid going out of bounds)
+    bge s9, x4, end_vertical_check  # Check row bounds
+    j vertical_row_check
 
-    j vertical_row_check  # If s2 is greater than or equal to x4, go back to check the next row
 
-    # If the above condition fails, it means you've checked all required rows.
-    # You should restore the stack and registers, then return.
-    addi sp, sp, 44   # Restore the stack pointer
-    jr ra             # Return to the caller
-
+end_vertical_check:
+    # Restore stack and registers
+    beqz t6, vertical_col_loop  # If flag is not set, continue loop
+    j main  # Return to the caller
 # Player wins
 playerWins:
-    addi sp, sp, 44
     li x1, 2
     rem t2 , t6 , x1
     beqz t2 , winX
