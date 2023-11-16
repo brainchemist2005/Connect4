@@ -120,6 +120,7 @@ checkWin:
     
     player0:
     li t2, 0
+    li x7, 0
     
     #jal checkHorizontalWin
     j checkVerticalWin
@@ -178,6 +179,7 @@ vertical_row_check:
     add x1, x1, x5     # Calculate address of the start of the row
     add x1, x1, s1     # Add column index to get the address of the current cell
     lb t1, 0(x1)       # Load the byte at the current cell into a0
+    
     beq t4 , t1, increment_vertical_counter
     
     j main 
@@ -186,12 +188,25 @@ increment_vertical_counter:
     li x6 , 4
     addi t5, t5, 1    # Increment match counter
 
+    li t0, 1
+    addi t0 , t0 ,0
+    
+    bne t6 , t0 , bug
+        bne x7 , t0, bug
+        li t0, 6
+    	bne s1 , t0, bug
+	addi t5,t5 ,-1
+	li x7 ,1
+    	
+    bug: 
     beq t5, x6, playerWins  # If there are four in a column, player wins
 
     # You should check if you've reached the bottom of the column before incrementing s9.
     addi s9, s9, -1   # Decrement to move to the next cell in the column
 
+
     bge s9, x4, end_vertical_check  # Check row bounds
+    bltz s9, end_vertical_check
     j vertical_row_check
 
 
