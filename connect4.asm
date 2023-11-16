@@ -52,9 +52,11 @@ main:
     li t3, 'q'
     beq a0, t3, Done
 
+    showBoard:
     # Check for 'd' to display game status
     li t3, 'd'
     la t0, Board
+    li t5 , 1
     beq a0, t3, gameStatus
 
     # Check if the input is a valid column number (1-7)
@@ -176,9 +178,6 @@ vertical_row_check:
     add x1, x1, x5     # Calculate address of the start of the row
     add x1, x1, s1     # Add column index to get the address of the current cell
     lb t1, 0(x1)       # Load the byte at the current cell into a0
-    mv a0, t4
-    li a7, PrintChar
-    ecall
     beq t4 , t1, increment_vertical_counter
     
     j main 
@@ -186,10 +185,6 @@ vertical_row_check:
 increment_vertical_counter:
     li x6 , 4
     addi t5, t5, 1    # Increment match counter
-
-    mv a0, t5
-    li a7, 1
-    ecall
 
     beq t5, x6, playerWins  # If there are four in a column, player wins
 
@@ -206,6 +201,10 @@ end_vertical_check:
     j main  # Return to the caller
 # Player wins
 playerWins:
+    li t1 , 9999
+    li a0, 'd'
+    j showBoard
+Bingo:
     li x1, 2
     rem t2 , t6 , x1
     bnez t2 , winX
@@ -260,6 +259,8 @@ gameStatus:
     li a7, PrintChar
     mv a0, t3
     ecall
+    li t3 , 9999
+    beq t1 , t3,Bingo
     beq s8 , x1, Xlost
     li x1 , 2
     rem x2, t6,x1
