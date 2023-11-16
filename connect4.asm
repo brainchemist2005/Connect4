@@ -14,7 +14,7 @@ L5: .string ":.......:"
 L6: .string ":.......:"
 L7: .string ":.......:"
 
-L8: .space 13
+L8: .string "404"
 
 errorMsg: .string "Erreur d'entrée.\n"
 Xloses : .string "Le joueur X perd."
@@ -122,8 +122,8 @@ checkWin:
     li t2, 0
     li x7, 0
     
-    #jal checkHorizontalWin
-    j checkVerticalWin
+    #j checkVerticalWin
+    j checkHorizontalWin
     #jal checkDiagonalWinLTR
     #jal checkDiagonalWinRTL
 
@@ -163,6 +163,8 @@ updateSlot:
 
     addi t6, t6, 1   # Increment the player's turn counter.
     beq s8 , x1,overflow
+    
+    mv x11, s9
 
     j checkWin
 
@@ -175,7 +177,7 @@ vertical_col_loop:
     li x4, 10
 vertical_row_check:
     lw x1 , 0(t3)
-    mul x5, s9, x4   # Calculate row offset
+    mul x5, x11, x4   # Calculate row offset
     add x1, x1, x5     # Calculate address of the start of the row
     add x1, x1, s1     # Add column index to get the address of the current cell
     lb t1, 0(x1)       # Load the byte at the current cell into a0
@@ -202,18 +204,93 @@ increment_vertical_counter:
     beq t5, x6, playerWins  # If there are four in a column, player wins
 
     # You should check if you've reached the bottom of the column before incrementing s9.
-    addi s9, s9, -1   # Decrement to move to the next cell in the column
+    addi x11, x11, -1   # Decrement to move to the next cell in the column
 
 
-    bge s9, x4, end_vertical_check  # Check row bounds
-    bltz s9, end_vertical_check
+    bge x11, x4, end_vertical_check  # Check row bounds
+    bltz x11, end_vertical_check
     j vertical_row_check
 
 
 end_vertical_check:
     # Restore stack and registers
     beqz t6, vertical_col_loop  # If flag is not set, continue loop
-    j main  # Return to the caller
+    j checkHorizontalWin  # Return to the caller
+    
+# checkHorizontalWin Subroutine
+checkHorizontalWin:
+    mv s1, a0  # Initialize column index
+    mv x11 ,s9
+    la t3, Board   # Load base address of the board
+    li t5, 0     
+    lw x1, 0(t3)   # Load address of the current row
+    mul x5, x11, x4 
+    add x1, x1, x5
+    add x1, x1, s1 
+    li x3, 0       # Reset match counter for each row
+    li x12, 1
+    li x13, ':'
+    li x14, 0
+    li x15 , 'X'
+    
+horizontal_cell_check:
+    lb x9, 0(x1)   # Load the content of the current cell
+    beq x9, t4, increment_match_counter # If the cell matches the current player's symbol, increment match counter
+    beq x9, x13, main
+    beqz x14 , modifyValue
+    modifyValue:
+    li x14, 1   #Thta the last thing i did
+ 
+increment_match_counter:
+    bne x9 , t4, noIncrement
+    addi x3, x3, 1 # Increment match counter
+    noIncrement:
+    li x6, 4 
+    li a0, '!'
+    li a7, PrintChar
+    #ecall
+ 
+    mv a0, x3
+    li a7, 1
+    #ecall
+    
+    li a0, '!'
+    li a7, PrintChar
+    #ecall
+    
+    beq x3, x6, playerWins # If four consecutive cells match, declare winner
+
+    beq x12, x14 , goLeft
+
+    beq x12, x14, goingLeft
+    # Move to the next cell in the row
+    goingRight:
+        addi x1, x1, 1
+        addi t5 ,t5 ,1 
+        j horizontal_cell_check
+    goLeft:
+    	sub x1 ,x1,t5   #maybe t5 is the prob
+    	li x12 , 2
+    	addi x14,x14, 1
+    goingLeft:
+       addi x1, x1, -1
+
+
+    lb x9, 0(x1)
+    li a7, PrintChar
+    li a0, '['
+    ecall
+    mv a0, x9
+    ecall
+    li a0, ']'
+    ecall
+    
+    bne x9, t4, main
+    j horizontal_cell_check # Loop through all rows
+	##There is a problem here 
+    #j main # Return to main loop if no winner    
+    
+ 
 # Player wins
 playerWins:
     li t1 , 9999

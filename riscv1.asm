@@ -17,13 +17,14 @@ L7: .string ":7Z-_?:"
 
 .text
 la t0, Board
-li t3 , 7
-li t4 , 1
-li t5 , 2
+#li t3 , 7
+#li t4 , 2
+#li t5 , 1
 lw t1, 0(t0)
-mul t6 , t3, t4
-add t1, t1, t6
-add t1, t1, t5 
+#mul t6 , t3, t4
+#add t1, t1, t6
+#add t1, t1, t5 
+lw t1 , 1(t1)
 lb t2, 0(t1)
 mv a0, t2
 li a7, PrintChar
