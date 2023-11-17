@@ -122,8 +122,8 @@ checkWin:
     li t2, 0
     li x7, 0
     
-    #j checkVerticalWin
-    j checkHorizontalWin
+    j checkVerticalWin
+    #j checkHorizontalWin
     #jal checkDiagonalWinLTR
     #jal checkDiagonalWinRTL
 
@@ -184,7 +184,7 @@ vertical_row_check:
     
     beq t4 , t1, increment_vertical_counter
     
-    j main 
+    j checkHorizontalWin  
 
 increment_vertical_counter:
     li x6 , 4
@@ -234,6 +234,7 @@ checkHorizontalWin:
     li x14, 0
     li x15, 0
     li x16, 2
+    
 horizontal_cell_check:
     lb x9, 0(x1)   # Load the content of the current cell
     beq x9, t4, increment_match_counter # If the cell matches the current player's symbol, increment match counter
@@ -243,7 +244,7 @@ horizontal_cell_check:
     beq x15 , x12 , modifyValue
     j increment_match_counter
     modifyValue:
-    li x14, 1   #Thta the last thing i did
+    li x14, 1   
 
 increment_match_counter:
     addi x15, x15, 1
@@ -251,8 +252,6 @@ increment_match_counter:
     addi x3, x3, 1 # Increment match counter
     noIncrement:
     li x6, 4 
-   
-        
     
     beq x3, x6, playerWins # If four consecutive cells match, declare winner
 
