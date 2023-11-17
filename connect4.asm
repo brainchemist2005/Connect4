@@ -219,6 +219,7 @@ end_vertical_check:
     
 # checkHorizontalWin Subroutine
 checkHorizontalWin:
+    li x4, 10
     mv s1, a0  # Initialize column index
     mv x11 ,s9
     la t3, Board   # Load base address of the board
@@ -231,38 +232,33 @@ checkHorizontalWin:
     li x12, 1
     li x13, ':'
     li x14, 0
-    li x15 , 'X'
-    
+    li x15, 0
+    li x16, 2
 horizontal_cell_check:
     lb x9, 0(x1)   # Load the content of the current cell
     beq x9, t4, increment_match_counter # If the cell matches the current player's symbol, increment match counter
     beq x9, x13, main
-    beqz x14 , modifyValue
+    bne x9 , t4, checkingPoint
+    checkingPoint:
+    beq x15 , x12 , modifyValue
+    j increment_match_counter
     modifyValue:
     li x14, 1   #Thta the last thing i did
- 
+
 increment_match_counter:
+    addi x15, x15, 1
     bne x9 , t4, noIncrement
     addi x3, x3, 1 # Increment match counter
     noIncrement:
     li x6, 4 
-    li a0, '!'
-    li a7, PrintChar
-    #ecall
- 
-    mv a0, x3
-    li a7, 1
-    #ecall
-    
-    li a0, '!'
-    li a7, PrintChar
-    #ecall
+   
+        
     
     beq x3, x6, playerWins # If four consecutive cells match, declare winner
 
     beq x12, x14 , goLeft
 
-    beq x12, x14, goingLeft
+    beq x16, x14, goingLeft
     # Move to the next cell in the row
     goingRight:
         addi x1, x1, 1
@@ -270,25 +266,20 @@ increment_match_counter:
         j horizontal_cell_check
     goLeft:
     	sub x1 ,x1,t5   #maybe t5 is the prob
-    	li x12 , 2
     	addi x14,x14, 1
     goingLeft:
        addi x1, x1, -1
 
 
     lb x9, 0(x1)
-    li a7, PrintChar
-    li a0, '['
-    ecall
-    mv a0, x9
-    ecall
-    li a0, ']'
-    ecall
     
-    bne x9, t4, main
+    beq x9, t4, settingValue
+    li x3, 0
+    j main
+    settingValue:
     j horizontal_cell_check # Loop through all rows
-	##There is a problem here 
-    #j main # Return to main loop if no winner    
+	##There is a problem here
+    	#j main # Return to main loop if no winner
     
  
 # Player wins
