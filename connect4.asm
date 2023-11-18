@@ -124,8 +124,8 @@ checkWin:
     
     j checkVerticalWin
     #j checkHorizontalWin
+    #j checkDiagonalWinRTL
     #jal checkDiagonalWinLTR
-    #jal checkDiagonalWinRTL
 
     j main
 
@@ -177,7 +177,7 @@ vertical_col_loop:
     li x4, 10
 vertical_row_check:
     lw x1 , 0(t3)
-    mul x5, x11, x4   # Calculate row offset
+    mul x5, x11, x4    # Calculate row offset
     add x1, x1, x5     # Calculate address of the start of the row
     add x1, x1, s1     # Add column index to get the address of the current cell
     lb t1, 0(x1)       # Load the byte at the current cell into a0
@@ -238,7 +238,7 @@ checkHorizontalWin:
 horizontal_cell_check:
     lb x9, 0(x1)   # Load the content of the current cell
     beq x9, t4, increment_match_counter # If the cell matches the current player's symbol, increment match counter
-    beq x9, x13, main
+    beq x9, x13, checkDiagonalWinRTL
     bne x9 , t4, checkingPoint
     checkingPoint:
     beq x15 , x12 , modifyValue
@@ -264,7 +264,7 @@ increment_match_counter:
         addi t5 ,t5 ,1 
         j horizontal_cell_check
     goLeft:
-    	sub x1 ,x1,t5   #maybe t5 is the prob
+    	sub x1 ,x1,t5
     	addi x14,x14, 1
     goingLeft:
        addi x1, x1, -1
@@ -274,12 +274,60 @@ increment_match_counter:
     
     beq x9, t4, settingValue
     li x3, 0
-    j main
+    j checkDiagonalWinRTL
     settingValue:
     j horizontal_cell_check # Loop through all rows
 	##There is a problem here
     	#j main # Return to main loop if no winner
+
+checkDiagonalWinRTL:
+    la t3, Board           # Load base address of the board
+    li t5, 0               # Row index counter for starting point
+    li x3, 0               # Match counter
+    li x4 ,10
+    mv s1, a0  		    # Initialize column index
+    mv x11 ,s9
+    lw x1, 0(t3)   	    # Load address of the current row
+    mul x5, x11, x4 
+    add x1, x1, x5
+    add x1, x1, s1 
+    li x13, ':'
+    li x6, 4
+    li x17 ,11
+    li x12, 1
+    li x14, 0
+       
+rtlDiagonalLoop:
+    lb x9, 0(x1)   			# Load the content of the current cell
+    beq x9, t4,rtlCheckDiagonal 	# If the cell matches the current player's symbol, increment match counter
+    beq x9, x13, main
+
+rtlCheckDiagonal:
+    addi x3, x3, 1
+    beq x3, x6, playerWins
     
+        
+    beq x12, x14 , goUp
+    beq x16, x14, goingUp
+
+    goingDown:
+        addi x1, x1, -11
+        addi t5 ,t5 ,1 
+         lb x9, 0(x1)
+        
+         bne x9 ,t4 , main
+        j rtlCheckDiagonal
+    goUp:
+        mul t5 , t5 , x17
+    	add x1 ,x1,t5
+    	addi x14,x14, 1
+    goingUp:
+       addi x1, x1, 11
+	
+ lb x9, 0(x1)
+ 
+ bne x9 ,t4 , main
+ j rtlDiagonalLoop
  
 # Player wins
 playerWins:
