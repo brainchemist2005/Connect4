@@ -12,7 +12,7 @@ L3: .string ":.......:"
 L4: .string ":.......:"
 L5: .string ":.......:"
 L6: .string ":.......:"
-L7: .string ":.......:"
+L7: .string "........."
 
 L8: .string "404"
 
@@ -125,7 +125,7 @@ checkWin:
     j checkVerticalWin
     #j checkHorizontalWin
     #j checkDiagonalWinRTL
-    #jal checkDiagonalWinLTR
+    #j checkDiagonalWinLTR
 
     j main
 
@@ -241,17 +241,17 @@ horizontal_cell_check:
     beq x9, x13, checkDiagonalWinRTL
     bne x9 , t4, checkingPoint
     checkingPoint:
-    beq x15 , x12 , modifyValue
+    beq x15, x12 , modifyValue
+    bgt x15, x12 , checkDiagonalWinRTL
     j increment_match_counter
     modifyValue:
-    li x14, 1   
+    li x14, 1
 
 increment_match_counter:
-    addi x15, x15, 1
     bne x9 , t4, noIncrement
     addi x3, x3, 1 # Increment match counter
     noIncrement:
-    li x6, 4 
+    li x6, 4
     
     beq x3, x6, playerWins # If four consecutive cells match, declare winner
 
@@ -262,12 +262,16 @@ increment_match_counter:
     goingRight:
         addi x1, x1, 1
         addi t5 ,t5 ,1 
+        lb x9, 0(x1)
+        beq x9, t4, horizontal_cell_check
+        li x15 , 1
         j horizontal_cell_check
     goLeft:
     	sub x1 ,x1,t5
     	addi x14,x14, 1
     goingLeft:
        addi x1, x1, -1
+       addi x15, x15 ,1
 
 
     lb x9, 0(x1)
@@ -299,11 +303,21 @@ checkDiagonalWinRTL:
        
 rtlDiagonalLoop:
     lb x9, 0(x1)   			# Load the content of the current cell
-    beq x9, t4,rtlCheckDiagonal 	# If the cell matches the current player's symbol, increment match counter
-    beq x9, x13, main
+    beq x9, t4,increment_match_counter1 	# If the cell matches the current player's symbol, increment match counter
+    beq x9, x13, checkDiagonalWinLTR
+    bne x9 , t4, checkingPoint1
+    checkingPoint1:
+    beq x15, x12 , modifyValue1
+    bgt x15, x12 , checkDiagonalWinRTL
+    j increment_match_counter
+    modifyValue1:
+    li x14, 1
 
-rtlCheckDiagonal:
-    addi x3, x3, 1
+increment_match_counter1:
+    bne x9 , t4, noIncrement1
+    addi x3, x3, 1 # Increment match counter
+    noIncrement1:
+    
     beq x3, x6, playerWins
     
         
@@ -314,20 +328,88 @@ rtlCheckDiagonal:
         addi x1, x1, -11
         addi t5 ,t5 ,1 
          lb x9, 0(x1)
-        
-         bne x9 ,t4 , main
-        j rtlCheckDiagonal
+        beq x9, t4, rtlDiagonalLoop
+        li x15 , 1
+        j rtlDiagonalLoop
     goUp:
         mul t5 , t5 , x17
     	add x1 ,x1,t5
     	addi x14,x14, 1
     goingUp:
        addi x1, x1, 11
+       addi x15, x15 ,1
 	
- lb x9, 0(x1)
- 
- bne x9 ,t4 , main
+lb x9, 0(x1)
+    
+    beq x9, t4, settingValue1
+    li x3, 0
+    j checkDiagonalWinLTR
+    settingValue1:
  j rtlDiagonalLoop
+ 
+ 
+ checkDiagonalWinLTR:
+    la t3, Board           # Load base address of the board
+    li t5, 0               # Row index counter for starting point
+    li x3, 0               # Match counter
+    li x4 ,10
+    mv s1, a0  		    # Initialize column index
+    mv x11 ,s9
+    lw x1, 0(t3)   	    # Load address of the current row
+    mul x5, x11, x4 
+    add x1, x1, x5
+    add x1, x1, s1 
+    li x13, ':'
+    li x6, 4
+    li x17 ,9
+    li x12, 1
+    li x14, 0
+       
+ltrDiagonalLoop:
+    lb x9, 0(x1)   			# Load the content of the current cell
+    beq x9, t4,increment_match_counter2 	# If the cell matches the current player's symbol, increment match counter
+    beq x9, x13, main
+    bne x9 , t4, checkingPoint2
+    checkingPoint2:
+    beq x15, x12 , modifyValue2
+    bgt x15, x12 , checkDiagonalWinRTL
+    j increment_match_counter
+    modifyValue2:
+    li x14, 1
+
+
+increment_match_counter2:
+    bne x9 , t4, noIncrement2
+    addi x3, x3, 1 # Increment match counter
+    noIncrement2:
+    
+    beq x3, x6, playerWins
+    
+    beq x12, x14 , goUpL
+    beq x16, x14, goingUpL
+
+    goingDownL:
+        addi x1, x1, -9
+        addi t5 ,t5 ,1 
+         lb x9, 0(x1)
+         beq x9, t4, ltrDiagonalLoop
+        li x15 , 1
+        j ltrDiagonalLoop
+    goUpL:
+        mul t5 , t5 , x17
+    	sub x1 ,x1,t5
+    	addi x14,x14, 1
+    goingUpL:
+       addi x1, x1, 9
+       addi x15, x15 ,1
+	
+lb x9, 0(x1)
+    
+    beq x9, t4, settingValue2
+    li x3, 0
+    j main
+    settingValue2:
+ j ltrDiagonalLoop
  
 # Player wins
 playerWins:
@@ -357,6 +439,7 @@ overflow:
 	li x2 , 2
 	rem x2,t6 ,x2
 	li x0, 0
+	li x18, 1
 	j gameStatus
 	
 Xlost:
@@ -380,7 +463,13 @@ gameStatus:
     mv a0, t3
     ecall
     li a7, PrintString
+    beq x18, x12, overFlowed
+    li t4 , 7
+    lw a0 ,20(t0)
+    j notOverFlowed
+    overFlowed:
     lw a0 ,24(t0)
+    notOverFlowed:
     ecall
     addi t0,t0,-4
     addi t5 ,t5 ,1
