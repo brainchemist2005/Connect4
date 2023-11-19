@@ -1,3 +1,11 @@
+# TP2 - Programme de Puissance 4
+# BOUARGAN Zakariae BOUZ90340206 (groupe 20)
+# Ce programme est une implémentation du jeu Puissance 
+# Quatre en langage assembleur MIPS. Les joueurs indiquent 
+# les numéros de colonne pour placer leurs pions 'X' ou 'O', 
+# et le jeu vérifie les alignements verticaux, horizontaux 
+# et diagonaux pour déterminer le gagnant.
+
 .eqv PrintChar, 11
 .eqv ReadChar, 12
 .eqv PrintString, 4
@@ -14,18 +22,15 @@ L5: .string ":.......:"
 L6: .string ":.......:"
 L7: .string "........."
 
-L8: .string "404"
-
 errorMsg: .string "Erreur d'entrée.\n"
 Xloses : .string "Le joueur X perd."
 Oloses : .string "Le joueur O perd."
-Xturn : .string "Au joueur X de jouer."
-Oturn : .string "Au joueur O de jouer."
+Xturn : .string "Le joueur X doit jouer."
+Oturn : .string "Le joueur O doit jouer."
 Xwon : .string "Le joueur X gagne."
 Owon : .string "Le joueur O gagne."
 
 .text
-
 la s0, Board       # Load base address of Board into s0
 
 lw s1, 0(s0)       # Load the address of the first row into s1
@@ -238,7 +243,11 @@ checkHorizontalWin:
 horizontal_cell_check:
     lb x9, 0(x1)   # Load the content of the current cell
     beq x9, t4, increment_match_counter # If the cell matches the current player's symbol, increment match counter
-    beq x9, x13, checkDiagonalWinRTL
+    beq x9, x13, Exiting
+    j notExiting
+    Exiting:
+    beq x14 , x16, checkDiagonalWinRTL
+    notExiting:
     bne x9 , t4, checkingPoint
     checkingPoint:
     beq x15, x12 , modifyValue
